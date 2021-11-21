@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <Description>Provides Ocelot extensions to use ZooKeeper</Description>
+    <AssemblyTitle>Ocelot.Provider.Consul</AssemblyTitle>
+    <VersionPrefix>0.0.0-dev</VersionPrefix>
+    <AssemblyName>Ocelot.Provider.ZooKeeper</AssemblyName>
+    <PackageId>Ocelot.Provider.ZooKeeper</PackageId>
+    <PackageTags>API Gateway;.NET core</PackageTags>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <Version>0.2.0</Version>
+    <PackageVersion>0.5.0</PackageVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>full</DebugType>
+    <DebugSymbols>True</DebugSymbols>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Ocelot" Version="17.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ZooKeeper.Client\ZooKeeper.Client.csproj" />
+  </ItemGroup>
+</Project>
