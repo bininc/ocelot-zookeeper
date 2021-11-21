@@ -1,7 +1,6 @@
-# Ocelot.Provider.ZooKeeper
-Ocelot.Provider.ZooKeeper
+# Ocelot.ZooKeeper
+Ocelot.ZooKeeper
 
+参考了 https://github.com/kingreatwill/Ocelot.Provider.ZooKeeper 项目中的源码，感谢源作者
 
-Install-Package Ocelot.Provider.ZooKeeper
-
-See: https://github.com/ThreeMammals/Ocelot.Provider.Consul
+TODO: 待补充使用说明
