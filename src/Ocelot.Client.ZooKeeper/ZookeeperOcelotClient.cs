@@ -36,7 +36,7 @@ namespace Ocelot.Client.ZooKeeper
         public IServerAddressesFeature ServerAddressesFeature { get; private set; }
         public ServiceEntry ServiceEntry { get; protected set; }
         public string ServicePath { get; private set; }
-        
+
         public void Init(IServerAddressesFeature serverAddressesFeature)
         {
             this.ServerAddressesFeature = serverAddressesFeature;
@@ -44,18 +44,27 @@ namespace Ocelot.Client.ZooKeeper
 
         public async Task RegisterService()
         {
-            BuildServiceEntry();
-            // Services/srvname/srvid
-            string path = $"/Ocelot/Services/{ServiceEntry.Name}";
-            if (!await _zookeeperClient.ExistsAsync(path))
+            try
             {
-                await _zookeeperClient.CreateRecursiveAsync(path, Array.Empty<byte>());
-            }
+                BuildServiceEntry();
 
-            bool exist = await _zookeeperClient.ExistsAsync($"{path}/{ServiceEntry.Id}");
-            ServicePath = await _zookeeperClient.CreateEphemeralAsync($"{path}/{ServiceEntry.Id}",
-                JsonSerializer.SerializeToUtf8Bytes(ServiceEntry), exist);
-            _logger.LogInformation("Register service={0} to zookeeper={1} result={2}", ServiceEntry.Name, _config.Host, ServicePath);
+                // Services/srvname/srvid
+                string path = $"/Ocelot/Services/{ServiceEntry.Name}";
+                if (!await _zookeeperClient.ExistsAsync(path))
+                {
+                    await _zookeeperClient.CreateRecursiveAsync(path, Array.Empty<byte>());
+                }
+
+                bool exist = await _zookeeperClient.ExistsAsync($"{path}/{ServiceEntry.Id}");
+                ServicePath = await _zookeeperClient.CreateEphemeralAsync($"{path}/{ServiceEntry.Id}",
+                    JsonSerializer.SerializeToUtf8Bytes(ServiceEntry), exist);
+                _logger.LogInformation("Register service={0} to zookeeper={1} result={2}", ServiceEntry.Name, _config.Host, ServicePath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Register to zookeeper error:{0}", ex.Message);
+                throw;
+            }
         }
 
         public async Task UnRegisterService()
