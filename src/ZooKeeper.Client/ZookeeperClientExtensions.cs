@@ -188,7 +188,7 @@ namespace ZooKeeper.Client
             return null;
         }
 
-        public static async Task<bool> SetAsync(this ZookeeperClient client, string path, string value)
+        public static async Task<bool> SetAsync(this IZookeeperClient client, string path, string value)
         {
             if (await client.ExistsAsync(path))
             {
@@ -201,11 +201,27 @@ namespace ZooKeeper.Client
             return true;
         }
 
-        public static async Task<Dictionary<string, string>> GetRangeAsync(this ZookeeperClient client, string path)
+        public static async Task<Dictionary<string, string>> GetRangeAsync(this IZookeeperClient client, string path)
         {
             var dic = new Dictionary<string, string>();
             var srvIds = await client.GetChildrenAsync(path);
             foreach (var srvId in srvIds)
+            {
+                var idPath = $"{path}/{srvId}";
+                var srvData = await client.GetDataAsync(idPath);
+                if (srvData != null && srvData.Any())
+                {
+                    dic.Add(idPath, Encoding.UTF8.GetString(srvData.ToArray()));
+                }
+            }
+
+            return dic;
+        }
+        
+        public static async Task<Dictionary<string, string>> GetRangeAsync(this IZookeeperClient client,string path, IEnumerable<string> child)
+        {
+            var dic = new Dictionary<string, string>();
+            foreach (var srvId in child)
             {
                 var idPath = $"{path}/{srvId}";
                 var srvData = await client.GetDataAsync(idPath);

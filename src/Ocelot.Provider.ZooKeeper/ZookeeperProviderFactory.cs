@@ -1,10 +1,8 @@
-﻿using ZooKeeper.Client;
+﻿using Microsoft.Extensions.Logging;
+using ZooKeeper.Client;
 
 namespace Ocelot.Provider.ZooKeeper
 {
-    using System.Threading.Tasks;
-    using Logging;
-    using Microsoft.AspNetCore.Builder;
     using Microsoft.Extensions.DependencyInjection;
     using ServiceDiscovery;
 
@@ -12,7 +10,7 @@ namespace Ocelot.Provider.ZooKeeper
     {
         public static ServiceDiscoveryFinderDelegate Get = (provider, config, route) =>
         {
-            var factory = provider.GetService<IOcelotLoggerFactory>();
+            var factory = provider.GetService<ILoggerFactory>();
 
             var ZookeeperFactory = provider.GetService<IZookeeperClientFactory>();
 
@@ -22,7 +20,7 @@ namespace Ocelot.Provider.ZooKeeper
 
             if (config.Type?.ToLower() == "pollZookeeper")
             {
-                return new PollZookeeper(config.PollingInterval, factory, ZookeeperServiceDiscoveryProvider);
+                return new PollZookeeper(config.PollingInterval, factory, ZookeeperFactory, ZookeeperRegistryConfiguration);
             }
 
             return ZookeeperServiceDiscoveryProvider;

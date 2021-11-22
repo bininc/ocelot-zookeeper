@@ -1,4 +1,6 @@
-﻿using ZooKeeper.Client;
+﻿using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
+using ZooKeeper.Client;
 using ZooKeeper.Client.Implementation;
 
 namespace Ocelot.Provider.ZooKeeper
@@ -8,7 +10,6 @@ namespace Ocelot.Provider.ZooKeeper
     using System.Linq;
     using System.Threading.Tasks;
     using Infrastructure.Extensions;
-    using Logging;
     using Newtonsoft.Json;
     using ServiceDiscovery.Providers;
     using Values;
@@ -16,24 +17,27 @@ namespace Ocelot.Provider.ZooKeeper
     public class Zookeeper : IServiceDiscoveryProvider
     {
         private readonly ZookeeperRegistryConfiguration _config;
-        private readonly IOcelotLogger _logger;
+        private readonly ILogger _logger;
         private readonly ZookeeperClient _zookeeperClient;
         private const string VersionPrefix = "version-";
+        private readonly ConcurrentDictionary<string, List<Service>> _serviceDic;
 
-        public Zookeeper(ZookeeperRegistryConfiguration config, IOcelotLoggerFactory factory, IZookeeperClientFactory clientFactory)
+        public Zookeeper(ZookeeperRegistryConfiguration config, ILoggerFactory factory, IZookeeperClientFactory clientFactory)
         {
             _logger = factory.CreateLogger<Zookeeper>();
             _config = config;
             _zookeeperClient = clientFactory.Get(_config);
+            _serviceDic = new ConcurrentDictionary<string, List<Service>>();
+            _zookeeperClient.SubscribeChildrenChange(ZookeeperKey, Listener);
         }
 
-        public async Task<List<Service>> Get()
+        public string ZookeeperKey => $"/Ocelot/Services/{_config.KeyOfServiceInZookeeper}";
+
+        private async Task Listener(IZookeeperClient client, NodeChildrenChangeArgs args)
         {
-            // Services/srvname/srvid
-            var queryResult = await _zookeeperClient.GetRangeAsync($"/Ocelot/Services/{_config.KeyOfServiceInZookeeper}");
-
+            _logger.LogInformation("node changed. eventType={0} CurrentChildrens={1}", args.Type.ToString(), args.CurrentChildrens);
+            var queryResult = await client.GetRangeAsync(args.Path, args.CurrentChildrens);
             var services = new List<Service>();
-
             foreach (var dic in queryResult)
             {
                 var serviceEntry = JsonConvert.DeserializeObject<ServiceEntry>(dic.Value);
@@ -41,17 +45,39 @@ namespace Ocelot.Provider.ZooKeeper
                 {
                     services.Add(BuildService(serviceEntry));
                 }
-                else
-                {
-                    _logger.LogWarning(
-                        $"Unable to use service Address: {serviceEntry.Host} and Port: {serviceEntry.Port} as it is invalid. Address must contain host only e.g. localhost and port must be greater than 0");
-                }
             }
 
-            return services.ToList();
+            _serviceDic[_config.KeyOfServiceInZookeeper] = services;
         }
 
-        private Service BuildService(ServiceEntry serviceEntry)
+        public async Task<List<Service>> Get()
+        {
+            return _serviceDic.GetOrAdd(_config.KeyOfServiceInZookeeper, key =>
+            {
+                _logger.LogInformation("read zookeeper data");
+
+                // Services/srvname/srvid
+                var queryResult = _zookeeperClient.GetRangeAsync(ZookeeperKey).Result;
+                var services = new List<Service>();
+                foreach (var dic in queryResult)
+                {
+                    var serviceEntry = JsonConvert.DeserializeObject<ServiceEntry>(dic.Value);
+                    if (IsValid(serviceEntry))
+                    {
+                        services.Add(BuildService(serviceEntry));
+                    }
+                    else
+                    {
+                        _logger.LogWarning(
+                            $"Unable to use service Address: {serviceEntry.Host} and Port: {serviceEntry.Port} as it is invalid. Address must contain host only e.g. localhost and port must be greater than 0");
+                    }
+                }
+
+                return services.ToList();
+            });
+        }
+
+        public static Service BuildService(ServiceEntry serviceEntry)
         {
             return new Service(
                 serviceEntry.Name,
@@ -61,7 +87,7 @@ namespace Ocelot.Provider.ZooKeeper
                 serviceEntry.Tags ?? Enumerable.Empty<string>());
         }
 
-        private bool IsValid(ServiceEntry serviceEntry)
+        public static bool IsValid(ServiceEntry serviceEntry)
         {
             if (string.IsNullOrEmpty(serviceEntry.Host) || serviceEntry.Host.Contains("http://") || serviceEntry.Host.Contains("https://") || serviceEntry.Port <= 0)
             {
@@ -71,7 +97,7 @@ namespace Ocelot.Provider.ZooKeeper
             return true;
         }
 
-        private string GetVersionFromStrings(IEnumerable<string> strings)
+        public static string GetVersionFromStrings(IEnumerable<string> strings)
         {
             return strings
                 ?.FirstOrDefault(x => x.StartsWith(VersionPrefix, StringComparison.Ordinal))
