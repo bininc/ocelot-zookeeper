@@ -52,12 +52,13 @@ namespace Ocelot.Provider.ZooKeeper
 
         public async Task<List<Service>> Get()
         {
-            return _serviceDic.GetOrAdd(_config.KeyOfServiceInZookeeper, key =>
+            bool hasValue = _serviceDic.TryGetValue(_config.KeyOfServiceInZookeeper, out var value);
+            if (!hasValue)
             {
                 _logger.LogInformation("read zookeeper data");
 
                 // Services/srvname/srvid
-                var queryResult = _zookeeperClient.GetRangeAsync(ZookeeperKey).Result;
+                var queryResult = await _zookeeperClient.GetRangeAsync(ZookeeperKey);
                 var services = new List<Service>();
                 foreach (var dic in queryResult)
                 {
@@ -68,13 +69,15 @@ namespace Ocelot.Provider.ZooKeeper
                     }
                     else
                     {
-                        _logger.LogWarning(
-                            $"Unable to use service Address: {serviceEntry.Host} and Port: {serviceEntry.Port} as it is invalid. Address must contain host only e.g. localhost and port must be greater than 0");
+                        _logger.LogWarning($"Unable to use service Address: {serviceEntry.Host} and Port: {serviceEntry.Port} as it is invalid. Address must contain host only e.g. localhost and port must be greater than 0");
                     }
                 }
 
-                return services.ToList();
-            });
+                value = services;
+                _serviceDic.TryAdd(_config.KeyOfServiceInZookeeper, value);
+            }
+
+            return value;
         }
 
         public static Service BuildService(ServiceEntry serviceEntry)
