@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -24,9 +25,9 @@ namespace ZooKeeper.Client.Test
         public async Task GetChildrenAsyncTest()
         {
             var childrens = await _client.GetChildrenAsync("/");
-
+            Console.WriteLine(JsonSerializer.Serialize(childrens));
             childrens = await _client.GetChildrenAsync("/zookeeper");
-            
+            Console.WriteLine(JsonSerializer.Serialize(childrens));
         }
 
         [Test]

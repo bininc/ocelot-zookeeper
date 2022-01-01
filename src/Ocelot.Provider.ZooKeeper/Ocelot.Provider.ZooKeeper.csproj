@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <Description>Provides Ocelot extensions to use ZooKeeper</Description>
     <AssemblyTitle>Ocelot.Provider.Consul</AssemblyTitle>
@@ -14,6 +14,7 @@
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
     <Version>0.2.0</Version>
     <PackageVersion>0.5.0</PackageVersion>
+    <LangVersion>10</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DebugType>full</DebugType>
@@ -22,7 +23,7 @@
     <WarningsAsErrors />
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Ocelot" Version="17.0.0" />
+    <PackageReference Include="Ocelot" Version="17.0.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ZooKeeper.Client\ZooKeeper.Client.csproj" />
