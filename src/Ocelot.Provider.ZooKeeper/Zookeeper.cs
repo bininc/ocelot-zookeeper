@@ -28,7 +28,7 @@ namespace Ocelot.Provider.ZooKeeper
             _config = config;
             _zookeeperClient = clientFactory.Get(_config);
             _serviceDic = new ConcurrentDictionary<string, List<Service>>();
-            _zookeeperClient.SubscribeChildrenChange(ZookeeperKey, Listener);
+            _zookeeperClient.SubscribeChildrenChange(ZookeeperKey, Listener).Wait();
         }
 
         public string ZookeeperKey => $"/Ocelot/Services/{_config.KeyOfServiceInZookeeper}";

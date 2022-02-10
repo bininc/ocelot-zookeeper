@@ -14,8 +14,8 @@ namespace Ocelot.Provider.ZooKeeper
 
     public class PollZookeeper : IServiceDiscoveryProvider
     {
+        private readonly IZookeeperClientFactory _clientFactory;
         private readonly ZookeeperRegistryConfiguration _config;
-        private readonly ZookeeperClient _zookeeperClient;
         private readonly ILogger _logger;
         private readonly Timer _timer;
         private bool _polling;
@@ -23,8 +23,8 @@ namespace Ocelot.Provider.ZooKeeper
 
         public PollZookeeper(int pollingInterval, ILoggerFactory factory, IZookeeperClientFactory clientFactory, ZookeeperRegistryConfiguration config)
         {
+            this._clientFactory = clientFactory;
             _config = config;
-            _zookeeperClient = clientFactory.Get(config);
             _logger = factory.CreateLogger<PollZookeeper>();
             _services = new List<Service>();
 
@@ -40,6 +40,15 @@ namespace Ocelot.Provider.ZooKeeper
                 await Poll();
                 _polling = false;
             }, null, pollingInterval, pollingInterval);
+        }
+
+        private ZookeeperClient _zookeeperClient
+        {
+            get
+            {
+                var client = _clientFactory.Get(_config);
+                return client;
+            }
         }
 
         public Task<List<Service>> Get()

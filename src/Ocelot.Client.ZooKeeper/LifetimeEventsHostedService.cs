@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Polly;
 
 namespace Ocelot.Client.ZooKeeper
 {
@@ -36,7 +37,9 @@ namespace Ocelot.Client.ZooKeeper
         private void OnStarted()
         {
             // Perform post-startup activities here
-            _ocelotClient.RegisterService();
+            Policy.Handle<Exception>()
+                .WaitAndRetryForeverAsync(retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)))
+                .ExecuteAsync(() => Task.Run(_ocelotClient.RegisterService));
         }
 
         private void OnStopping()

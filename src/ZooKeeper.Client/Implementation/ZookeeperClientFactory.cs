@@ -1,12 +1,15 @@
-﻿
+﻿using System.Collections.Concurrent;
 
 namespace ZooKeeper.Client.Implementation
 {
     public class ZookeeperClientFactory : IZookeeperClientFactory
     {
+        private readonly static ConcurrentDictionary<string, ZookeeperClient> _cacheDic = new ConcurrentDictionary<string, ZookeeperClient>();
+
         public ZookeeperClient Get(ZookeeperRegistryConfiguration config)
         {
-            return new ZookeeperClient($"{config.Host}:{config.Port}");
+            string key = $"{config.Host}:{config.Port}";
+            return _cacheDic.GetOrAdd(key, k => new ZookeeperClient(key));
         }
     }
 }

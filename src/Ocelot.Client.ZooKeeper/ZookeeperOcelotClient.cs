@@ -19,9 +19,9 @@ namespace Ocelot.Client.ZooKeeper
     public class ZookeeperOcelotClient : IOcelotClient
     {
         private readonly ZookeeperRegistryConfiguration _config;
+        private readonly IZookeeperClientFactory _clientFactory;
         private readonly IWebHostEnvironment _hostEnvironment;
         private readonly ILogger _logger;
-        private readonly ZookeeperClient _zookeeperClient;
         private const string VersionPrefix = "version-";
 
         public ZookeeperOcelotClient(ZookeeperRegistryConfiguration config, ILoggerFactory factory, IZookeeperClientFactory clientFactory,
@@ -29,8 +29,21 @@ namespace Ocelot.Client.ZooKeeper
         {
             _logger = factory.CreateLogger<ZookeeperOcelotClient>();
             _config = config;
-            _hostEnvironment = hostEnvironment;
-            _zookeeperClient = clientFactory.Get(_config);
+            _clientFactory = clientFactory;
+            _hostEnvironment = hostEnvironment;     
+        }
+
+        private ZookeeperClient _zookeeperClient
+        {
+            get
+            {
+                var client = _clientFactory.Get(_config);
+                if (client.Options.OperatingTimeout.TotalSeconds != 30)
+                {
+                    client.Options.OperatingTimeout = TimeSpan.FromSeconds(30);
+                }
+                return client;
+            }
         }
 
         public IServerAddressesFeature ServerAddressesFeature { get; private set; }
